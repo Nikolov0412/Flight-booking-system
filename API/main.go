@@ -1,12 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"log"
-
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/gin-gonic/gin"
 )
 
+var svc *dynamodb.DynamoDB
+
+func init() {
+	var err error
+	svc, err = initDynamoDB()
+	if err != nil {
+		panic(err)
+	}
+}
 func main() {
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
@@ -15,9 +22,4 @@ func main() {
 		})
 	})
 	r.Run()
-	db, err := initDynamoDB()
-	if err != nil {
-		log.Fatalf("Error initializing DynamoDB client: %v", err)
-	}
-	fmt.Println(db.Endpoint)
 }

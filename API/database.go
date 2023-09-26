@@ -2,15 +2,14 @@ package main
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
 func initDynamoDB() (*dynamodb.DynamoDB, error) {
 	awsConfig := &aws.Config{
-		Region:      aws.String("us-east-1"),
-		Credentials: credentials.NewStaticCredentials("00000000", "00000000", ""),
+		Region:   aws.String("us-east-1"),             // Change to your desired region.
+		Endpoint: aws.String("http://localhost:4566"), // LocalStack endpoint
 	}
 
 	sess, err := session.NewSession(awsConfig)
