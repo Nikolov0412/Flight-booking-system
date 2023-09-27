@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/google/uuid"
 )
 
@@ -69,4 +70,36 @@ func CreateAirline(name string, svc *dynamodb.DynamoDB) error {
 
 	fmt.Printf("Created Airline: ID=%s, Name=%s\n", airlineID, name)
 	return nil
+}
+
+func GetAirlineByID(airlineID string, svc *dynamodb.DynamoDB) (*Airline, error) {
+	// Create a DynamoDB GetItem input.
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String("Airlines"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(airlineID),
+			},
+		},
+	}
+
+	// Get the item from DynamoDB.
+	result, err := svc.GetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the item was found.
+	if result.Item == nil {
+		return nil, errors.New("Airline not found")
+	}
+
+	// Parse the retrieved data into an Airline struct.
+	airline := &Airline{}
+	err = dynamodbattribute.UnmarshalMap(result.Item, airline)
+	if err != nil {
+		return nil, err
+	}
+
+	return airline, nil
 }
