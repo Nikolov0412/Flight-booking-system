@@ -8,57 +8,58 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/google/uuid"
 )
 
 type Airport struct {
-	ID   int    `json:"id"`
-	Code string `json:"code"`
+	Code string `json:"Code"`
 }
 
-func ValidateAirportName(name string) error {
-	name = strings.TrimSpace(name)
-	if len(name) != 3 || !isAlphabetic(name) {
-		return errors.New("Airport name must be exactly 3 alphabetic characters")
+func ValidateAirportCode(code string) error {
+	code = strings.TrimSpace(code)
+	if len(code) != 3 || !isAlphabetic(code) {
+		return errors.New("Airport code must be exactly 3 alphabetic characters")
 	}
-
 	return nil
 }
 
-// isAlphabetic checks if a string contains only alphabetic characters.
-func isAlphabetic(s string) bool {
-	return regexp.MustCompile("^[a-zA-Z]+$").MatchString(s)
-}
-func CreateAirport(name string, svc *dynamodb.DynamoDB) error {
-	// Validate the airport name.
-	if err := ValidateAirportName(name); err != nil {
+func CreateAirport(code string, svc *dynamodb.DynamoDB) error {
+	// Validate the airport code.
+	if err := ValidateAirportCode(code); err != nil {
 		return err
 	}
 
-	// Check if the airport name is already in use.
-	input := &dynamodb.QueryInput{
+	// Check if the airport code is already in use.
+	queryInput := &dynamodb.QueryInput{
 		TableName: aws.String("Airports"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": {
-				S: aws.String(name),
+			":code": {
+				S: aws.String(code),
 			},
 		},
-		KeyConditionExpression: aws.String("Code = :name"),
+		KeyConditionExpression: aws.String("Code = :code"),
 	}
-	result, err := svc.Query(input)
+	result, err := svc.Query(queryInput)
 	if err != nil {
 		return err
 	}
 
 	if len(result.Items) > 0 {
-		return errors.New("Airport name is not unique")
+		return errors.New("Airport code is not unique")
 	}
 
-	// Create a new airport in DynamoDB.
+	// Generate a unique ID for the airport.
+	airportID := uuid.New().String()
+
+	// Create a new airport in DynamoDB with ID and Code.
 	putInput := &dynamodb.PutItemInput{
 		TableName: aws.String("Airports"),
 		Item: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(airportID),
+			},
 			"Code": {
-				S: aws.String(name),
+				S: aws.String(code),
 			},
 		},
 	}
@@ -67,6 +68,10 @@ func CreateAirport(name string, svc *dynamodb.DynamoDB) error {
 		return err
 	}
 
-	fmt.Printf("Created Airport: %s\n", name)
+	fmt.Printf("Created Airport: ID=%s, Code=%s\n", airportID, code)
 	return nil
+}
+
+func isAlphabetic(s string) bool {
+	return regexp.MustCompile("^[a-zA-Z]+$").MatchString(s)
 }

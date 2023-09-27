@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/gin-gonic/gin"
 )
@@ -22,4 +24,9 @@ func main() {
 		})
 	})
 	r.Run()
+	err := CreateAirport("JFK", svc) // Use CreateAirport function directly
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+
 }
