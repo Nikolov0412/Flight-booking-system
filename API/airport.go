@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/google/uuid"
 )
 
@@ -74,4 +75,36 @@ func CreateAirport(code string, svc *dynamodb.DynamoDB) error {
 
 func isAlphabetic(s string) bool {
 	return regexp.MustCompile("^[a-zA-Z]+$").MatchString(s)
+}
+
+func GetAirportByID(airportID string, svc *dynamodb.DynamoDB) (*Airport, error) {
+	// Create a DynamoDB GetItem input.
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String("Airports"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(airportID),
+			},
+		},
+	}
+
+	// Get the item from DynamoDB.
+	result, err := svc.GetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the item was found.
+	if result.Item == nil {
+		return nil, errors.New("Airport not found")
+	}
+
+	// Parse the retrieved data into an Airport struct.
+	airport := &Airport{}
+	err = dynamodbattribute.UnmarshalMap(result.Item, airport)
+	if err != nil {
+		return nil, err
+	}
+
+	return airport, nil
 }
