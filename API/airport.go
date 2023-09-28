@@ -108,3 +108,30 @@ func GetAirportByID(airportID string, svc *dynamodb.DynamoDB) (*Airport, error) 
 
 	return airport, nil
 }
+
+func GetAllAirports(svc *dynamodb.DynamoDB) ([]*Airport, error) {
+	// Create a DynamoDB Scan input to retrieve all items from the Airports table.
+	input := &dynamodb.ScanInput{
+		TableName: aws.String("Airports"),
+	}
+
+	// Perform the scan operation.
+	result, err := svc.Scan(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize a slice to hold the retrieved airports.
+	airports := []*Airport{}
+
+	// Iterate through the scan results and parse each item into an Airport struct.
+	for _, item := range result.Items {
+		airport := &Airport{}
+		if err := dynamodbattribute.UnmarshalMap(item, airport); err != nil {
+			return nil, err
+		}
+		airports = append(airports, airport)
+	}
+
+	return airports, nil
+}

@@ -103,3 +103,30 @@ func GetAirlineByID(airlineID string, svc *dynamodb.DynamoDB) (*Airline, error) 
 
 	return airline, nil
 }
+
+func GetAllAirlines(svc *dynamodb.DynamoDB) ([]*Airline, error) {
+	// Create a DynamoDB Scan input to retrieve all items from the Airlines table.
+	input := &dynamodb.ScanInput{
+		TableName: aws.String("Airlines"),
+	}
+
+	// Perform the scan operation.
+	result, err := svc.Scan(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize a slice to hold the retrieved airlines.
+	airlines := []*Airline{}
+
+	// Iterate through the scan results and parse each item into an Airline struct.
+	for _, item := range result.Items {
+		airline := &Airline{}
+		if err := dynamodbattribute.UnmarshalMap(item, airline); err != nil {
+			return nil, err
+		}
+		airlines = append(airlines, airline)
+	}
+
+	return airlines, nil
+}
