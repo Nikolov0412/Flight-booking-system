@@ -7,34 +7,31 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/google/uuid"
 )
 
 type Seat struct {
-	Row      int  `json:"Row"`
-	Col      int  `json:"Col"`
-	IsBooked bool `json:"IsBooked"`
+	ID       string `json:"id"`
+	Row      int    `json:"Row"`
+	Col      int    `json:"Col"`
+	IsBooked bool   `json:"IsBooked"`
 }
 
-func CreatetSeat(row, col int, isBooked bool, svc *dynamodb.DynamoDB) error {
-	// Generate a unique ID for the seat.
-	seatID := uuid.New().String()
-
+func CreatetSeat(seat Seat, svc *dynamodb.DynamoDB) error {
 	// Create a DynamoDB PutItem input.
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String("Seats"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(seatID),
+				S: aws.String(seat.ID),
 			},
 			"Row": {
-				N: aws.String(fmt.Sprintf("%d", row)),
+				N: aws.String(fmt.Sprintf("%d", seat.Row)),
 			},
 			"Col": {
-				N: aws.String(fmt.Sprintf("%d", col)),
+				N: aws.String(fmt.Sprintf("%d", seat.Col)),
 			},
 			"IsBooked": {
-				BOOL: aws.Bool(isBooked),
+				BOOL: aws.Bool(seat.IsBooked),
 			},
 		},
 	}

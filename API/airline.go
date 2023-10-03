@@ -8,10 +8,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/google/uuid"
 )
 
 type Airline struct {
+	ID   string `json:"id"`
 	Name string `json:"Name"`
 }
 
@@ -23,9 +23,9 @@ func ValidateAirlineName(name string) error {
 	return nil
 }
 
-func CreateAirline(name string, svc *dynamodb.DynamoDB) error {
+func CreateAirline(airline Airline, svc *dynamodb.DynamoDB) error {
 	// Validate the airline name.
-	if err := ValidateAirlineName(name); err != nil {
+	if err := ValidateAirlineName(airline.Name); err != nil {
 		return err
 	}
 
@@ -34,7 +34,7 @@ func CreateAirline(name string, svc *dynamodb.DynamoDB) error {
 		TableName: aws.String("Airlines"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":name": {
-				S: aws.String(name),
+				S: aws.String(airline.Name),
 			},
 		},
 		KeyConditionExpression: aws.String("Name = :name"),
@@ -48,18 +48,15 @@ func CreateAirline(name string, svc *dynamodb.DynamoDB) error {
 		return errors.New("Airline name is not unique")
 	}
 
-	// Generate a unique ID for the airline.
-	airlineID := uuid.New().String()
-
 	// Create a new airline in DynamoDB with ID and Name.
 	putInput := &dynamodb.PutItemInput{
 		TableName: aws.String("Airlines"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(airlineID),
+				S: aws.String(airline.ID),
 			},
 			"Name": {
-				S: aws.String(name),
+				S: aws.String(airline.Name),
 			},
 		},
 	}
@@ -68,7 +65,7 @@ func CreateAirline(name string, svc *dynamodb.DynamoDB) error {
 		return err
 	}
 
-	fmt.Printf("Created Airline: ID=%s, Name=%s\n", airlineID, name)
+	fmt.Printf("Created Airline: ID=%s, Name=%s\n", airline.ID, airline.Name)
 	return nil
 }
 

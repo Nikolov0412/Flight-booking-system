@@ -9,10 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/google/uuid"
 )
 
 type Airport struct {
+	ID   string `json:"id"`
 	Code string `json:"Code"`
 }
 
@@ -24,9 +24,9 @@ func ValidateAirportCode(code string) error {
 	return nil
 }
 
-func CreateAirport(code string, svc *dynamodb.DynamoDB) error {
+func CreateAirport(airport Airport, svc *dynamodb.DynamoDB) error {
 	// Validate the airport code.
-	if err := ValidateAirportCode(code); err != nil {
+	if err := ValidateAirportCode(airport.Code); err != nil {
 		return err
 	}
 
@@ -35,7 +35,7 @@ func CreateAirport(code string, svc *dynamodb.DynamoDB) error {
 		TableName: aws.String("Airports"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":code": {
-				S: aws.String(code),
+				S: aws.String(airport.Code),
 			},
 		},
 		KeyConditionExpression: aws.String("Code = :code"),
@@ -49,18 +49,15 @@ func CreateAirport(code string, svc *dynamodb.DynamoDB) error {
 		return errors.New("Airport code is not unique")
 	}
 
-	// Generate a unique ID for the airport.
-	airportID := uuid.New().String()
-
 	// Create a new airport in DynamoDB with ID and Code.
 	putInput := &dynamodb.PutItemInput{
 		TableName: aws.String("Airports"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(airportID),
+				S: aws.String(airport.ID),
 			},
 			"Code": {
-				S: aws.String(code),
+				S: aws.String(airport.Code),
 			},
 		},
 	}
@@ -69,7 +66,7 @@ func CreateAirport(code string, svc *dynamodb.DynamoDB) error {
 		return err
 	}
 
-	fmt.Printf("Created Airport: ID=%s, Code=%s\n", airportID, code)
+	fmt.Printf("Created Airport: ID=%s, Code=%s\n", airport.ID, airport.Code)
 	return nil
 }
 
