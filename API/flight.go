@@ -66,11 +66,50 @@ func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
 	return nil
 }
 
-func validateFlightData(flight Flight) error {
-	// TODO: Implement any data validation rules here.
-	// For example, check that FlightNumber, OriginAirport, and DestinationAirport are not empty, etc.
-	if flight.FlightNumber == "" {
-		return errors.New("FlightNumber is required")
+func isNotEmpty(value interface{}) bool {
+	switch v := value.(type) {
+	case string:
+		return v != ""
+	case time.Time:
+		return !v.IsZero()
+	case int:
+		return v != 0
+	// Add more cases for other types as needed
+	default:
+		return true // Assume not empty for unsupported types
 	}
+}
+
+func validateFlightData(flight Flight) error {
+	var validationRules = []struct {
+		field   interface{}
+		message string
+	}{
+		{flight.FlightNumber, "FlightNumber is required"},
+		{flight.OriginAirport, "OriginAirport is required"},
+		{flight.DestinationAirport, "DestinationAirport is required"},
+		{flight.DepartureDate, "DepartureDate is required and must be a valid date"},
+		{flight.FlightTime, "FlightTime must be greater than 0"},
+		{flight.ETA, "ETA is required"},
+		{flight.PlaneID, "PlaneID is required"},
+	}
+
+	for _, rule := range validationRules {
+		if !isNotEmpty(rule.field) {
+			return errors.New(rule.message)
+		}
+	}
+
 	return nil
+}
+
+// CalculateETA calculates the Estimated Time of Arrival (ETA) and returns it as a formatted string.
+func (flight Flight) CalculateETA() string {
+	departureTime := flight.DepartureDate
+	arrivalTime := departureTime.Add(flight.FlightTime)
+
+	// Format the ETA as "15:28" (HH:mm).
+	etaString := arrivalTime.Format("15:28")
+
+	return etaString
 }
