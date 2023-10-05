@@ -11,6 +11,7 @@ import (
 )
 
 type Flight struct {
+	ID                 string        `json:"id"`
 	FlightNumber       string        `json:"flightNumber"`
 	OriginAirport      string        `json:"originAirport"`
 	DestinationAirport string        `json:"destinationAirport"`

@@ -11,9 +11,10 @@ import (
 )
 
 type Seat struct {
-	Row      int  `json:"Row"`
-	Col      int  `json:"Col"`
-	IsBooked bool `json:"IsBooked"`
+	ID       string `json:"id"`
+	Row      int    `json:"Row"`
+	Col      int    `json:"Col"`
+	IsBooked bool   `json:"IsBooked"`
 }
 
 func CreatetSeat(seat Seat, svc *dynamodb.DynamoDB) error {

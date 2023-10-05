@@ -9,6 +9,7 @@ import (
 )
 
 type Plane struct {
+	ID             string          `json:"id"`
 	Name           string          `json:"name"`
 	AirlineID      int             `json:"airlineId"`
 	FlightSections []FlightSection `json:"flightSections"`

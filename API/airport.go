@@ -13,7 +13,8 @@ import (
 )
 
 type Airport struct {
-	Code string `json:"Code"`
+	ID   string `json:"id"`
+	Code string `json:"code"`
 }
 
 func ValidateAirportCode(code string) error {
@@ -29,10 +30,15 @@ func CreateAirport(airport Airport, svc *dynamodb.DynamoDB) error {
 	if err := ValidateAirportCode(airport.Code); err != nil {
 		return err
 	}
-
+	if !doesTableExist("Airports", svc) {
+		if err := createAirportsTable(svc); err != nil {
+			fmt.Printf("Error creating Airports table: %v\n", err)
+		}
+	}
 	// Check if the airport code is already in use.
 	queryInput := &dynamodb.QueryInput{
 		TableName: aws.String("Airports"),
+		IndexName: aws.String("CodeIndex"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":code": {
 				S: aws.String(airport.Code),
@@ -131,4 +137,61 @@ func GetAllAirports(svc *dynamodb.DynamoDB) ([]*Airport, error) {
 	}
 
 	return airports, nil
+}
+
+func createAirportsTable(svc *dynamodb.DynamoDB) error {
+	// Define the parameters for creating the "Airports" table.
+	params := &dynamodb.CreateTableInput{
+		TableName: aws.String("Airports"),
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("ID"),
+				KeyType:       aws.String("HASH"), // Primary key
+			},
+			{
+				AttributeName: aws.String("Code"), // Secondary key
+				KeyType:       aws.String("RANGE"),
+			},
+		},
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("ID"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("Code"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String("CodeIndex"), // Name of the GSI
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{
+						AttributeName: aws.String("Code"),
+						KeyType:       aws.String("HASH"), // GSI key
+					},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String("ALL"), // Include all attributes in the index
+				},
+				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+					ReadCapacityUnits:  aws.Int64(5),
+					WriteCapacityUnits: aws.Int64(5),
+				},
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+	}
+
+	// Create the "Airports" table.
+	_, err := svc.CreateTable(params)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Created Airports table")
+	return nil
 }

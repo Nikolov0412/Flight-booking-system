@@ -10,6 +10,7 @@ import (
 )
 
 type FlightSection struct {
+	ID        string   `json:"id"`
 	SeatClass string   `json:"seatClass"`
 	NumRows   int      `json:"numRows"`
 	NumCols   int      `json:"numCols"`

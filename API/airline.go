@@ -12,6 +12,7 @@ import (
 )
 
 type Airline struct {
+	ID   string `json:"id"`
 	Code string `json:"code"`
 }
 
@@ -36,6 +37,7 @@ func CreateAirline(airline Airline, svc *dynamodb.DynamoDB) error {
 	// Check if the airline code is already in use.
 	queryInput := &dynamodb.QueryInput{
 		TableName: aws.String("Airlines"),
+		IndexName: aws.String("CodeIndex"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":code": {
 				S: aws.String(airline.Code),
@@ -44,7 +46,6 @@ func CreateAirline(airline Airline, svc *dynamodb.DynamoDB) error {
 		KeyConditionExpression: aws.String("Code = :code"),
 	}
 	result, err := svc.Query(queryInput)
-
 	if err != nil {
 		return err
 	}
@@ -161,6 +162,24 @@ func createAirlinesTable(svc *dynamodb.DynamoDB) error {
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(5),
 			WriteCapacityUnits: aws.Int64(5),
+		},
+		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String("CodeIndex"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{
+						AttributeName: aws.String("Code"),
+						KeyType:       aws.String("HASH"), // Secondary index key
+					},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String("ALL"),
+				},
+				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+					ReadCapacityUnits:  aws.Int64(5),
+					WriteCapacityUnits: aws.Int64(5),
+				},
+			},
 		},
 	}
 

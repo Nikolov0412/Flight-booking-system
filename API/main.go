@@ -38,6 +38,16 @@ func main() {
 		c.JSON(http.StatusCreated, gin.H{"message": "Airline created successfully"})
 	})
 
+	r.GET("/airlines", func(c *gin.Context) {
+		airlines, err := GetAllAirlines(svc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, airlines)
+	})
+
 	r.POST("/airports", func(c *gin.Context) {
 		var airport Airport
 
@@ -53,6 +63,17 @@ func main() {
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Airport created successfully"})
 	})
+
+	r.GET("/airports", func(c *gin.Context) {
+		airports, err := GetAllAirports(svc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, airports)
+	})
+
 	r.Run()
 
 }
