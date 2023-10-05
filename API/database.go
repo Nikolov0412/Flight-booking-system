@@ -8,8 +8,9 @@ import (
 
 func initDynamoDB() (*dynamodb.DynamoDB, error) {
 	awsConfig := &aws.Config{
-		Region:   aws.String("us-east-1"),             // Change to your desired region.
-		Endpoint: aws.String("http://localhost:4566"), // LocalStack endpoint
+		Region:     aws.String("us-east-1"),             // Change to your desired region.
+		Endpoint:   aws.String("http://localhost:4566"), // LocalStack endpoint
+		DisableSSL: aws.Bool(true),
 	}
 
 	sess, err := session.NewSession(awsConfig)

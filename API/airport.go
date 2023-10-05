@@ -9,10 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/google/uuid"
 )
 
 type Airport struct {
-	ID   string `json:"id"`
 	Code string `json:"Code"`
 }
 
@@ -48,13 +48,13 @@ func CreateAirport(airport Airport, svc *dynamodb.DynamoDB) error {
 	if len(result.Items) > 0 {
 		return errors.New("Airport code is not unique")
 	}
-
+	airportID := uuid.New().String()
 	// Create a new airport in DynamoDB with ID and Code.
 	putInput := &dynamodb.PutItemInput{
 		TableName: aws.String("Airports"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(airport.ID),
+				S: aws.String(airportID),
 			},
 			"Code": {
 				S: aws.String(airport.Code),
@@ -66,7 +66,7 @@ func CreateAirport(airport Airport, svc *dynamodb.DynamoDB) error {
 		return err
 	}
 
-	fmt.Printf("Created Airport: ID=%s, Code=%s\n", airport.ID, airport.Code)
+	fmt.Printf("Created Airport: ID=%s, Code=%s\n", airportID, airport.Code)
 	return nil
 }
 

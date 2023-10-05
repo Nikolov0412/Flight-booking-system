@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/gin-gonic/gin"
 )
@@ -15,11 +17,41 @@ func init() {
 	}
 }
 func main() {
+
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
+	// Define a route for creating airlines
+	r.POST("/airlines", func(c *gin.Context) {
+		var airline Airline
+
+		// Bind the request body to the Airline struct
+		if err := c.ShouldBindJSON(&airline); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Call the CreateAirline function to create the airline in DynamoDB
+		if err := CreateAirline(airline, svc); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Airline created successfully"})
+	})
+
+	r.POST("/airports", func(c *gin.Context) {
+		var airport Airport
+
+		if err := c.ShouldBindJSON(&airport); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := CreateAirport(airport, svc); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Airport created successfully"})
 	})
 	r.Run()
 

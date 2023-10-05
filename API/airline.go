@@ -8,55 +8,61 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/google/uuid"
 )
 
 type Airline struct {
-	ID   string `json:"id"`
-	Name string `json:"Name"`
+	Code string `json:"code"`
 }
 
-func ValidateAirlineName(name string) error {
-	name = strings.TrimSpace(name)
-	if len(name) >= 6 {
-		return errors.New("Airline name must have a length less than 6 characters")
+func ValidateAirlineCode(code string) error {
+	code = strings.TrimSpace(code)
+	if len(code) >= 6 {
+		return errors.New("Airline code must have a length less than 6 characters")
 	}
 	return nil
 }
 
 func CreateAirline(airline Airline, svc *dynamodb.DynamoDB) error {
-	// Validate the airline name.
-	if err := ValidateAirlineName(airline.Name); err != nil {
+	// Validate the airline code.
+	if err := ValidateAirlineCode(airline.Code); err != nil {
 		return err
 	}
-
-	// Check if the airline name is already in use.
+	if !doesTableExist("Airlines", svc) {
+		if err := createAirlinesTable(svc); err != nil {
+			fmt.Printf("Error creating Airlines table: %v\n", err)
+		}
+	}
+	// Check if the airline code is already in use.
 	queryInput := &dynamodb.QueryInput{
 		TableName: aws.String("Airlines"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":name": {
-				S: aws.String(airline.Name),
+			":code": {
+				S: aws.String(airline.Code),
 			},
 		},
-		KeyConditionExpression: aws.String("Name = :name"),
+		KeyConditionExpression: aws.String("Code = :code"),
 	}
 	result, err := svc.Query(queryInput)
+
 	if err != nil {
 		return err
 	}
 
 	if len(result.Items) > 0 {
-		return errors.New("Airline name is not unique")
+		return errors.New("Airline code is not unique")
 	}
 
-	// Create a new airline in DynamoDB with ID and Name.
+	airlineID := uuid.New().String()
+	// Create a new airline in DynamoDB with ID and Code.
 	putInput := &dynamodb.PutItemInput{
 		TableName: aws.String("Airlines"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(airline.ID),
+				S: aws.String(airlineID),
 			},
-			"Name": {
-				S: aws.String(airline.Name),
+			"Code": {
+				S: aws.String(airline.Code),
 			},
 		},
 	}
@@ -65,7 +71,7 @@ func CreateAirline(airline Airline, svc *dynamodb.DynamoDB) error {
 		return err
 	}
 
-	fmt.Printf("Created Airline: ID=%s, Name=%s\n", airline.ID, airline.Name)
+	fmt.Printf("Created Airline: ID=%s, Code=%s\n", airlineID, airline.Code)
 	return nil
 }
 
@@ -126,4 +132,44 @@ func GetAllAirlines(svc *dynamodb.DynamoDB) ([]*Airline, error) {
 	}
 
 	return airlines, nil
+}
+
+func createAirlinesTable(svc *dynamodb.DynamoDB) error {
+	// Define the parameters for creating the "Airlines" table.
+	params := &dynamodb.CreateTableInput{
+		TableName: aws.String("Airlines"),
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("ID"),
+				KeyType:       aws.String("HASH"),
+			},
+			{
+				AttributeName: aws.String("Code"),
+				KeyType:       aws.String("RANGE"),
+			},
+		},
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("ID"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("Code"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+	}
+
+	// Create the "Airlines" table.
+	_, err := svc.CreateTable(params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Created Airlines table")
+	return nil
 }

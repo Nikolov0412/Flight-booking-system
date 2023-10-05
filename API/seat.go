@@ -7,22 +7,24 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/google/uuid"
 )
 
 type Seat struct {
-	ID       string `json:"id"`
-	Row      int    `json:"Row"`
-	Col      int    `json:"Col"`
-	IsBooked bool   `json:"IsBooked"`
+	Row      int  `json:"Row"`
+	Col      int  `json:"Col"`
+	IsBooked bool `json:"IsBooked"`
 }
 
 func CreatetSeat(seat Seat, svc *dynamodb.DynamoDB) error {
+	seatID := uuid.New().String()
+
 	// Create a DynamoDB PutItem input.
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String("Seats"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(seat.ID),
+				S: aws.String(seatID),
 			},
 			"Row": {
 				N: aws.String(fmt.Sprintf("%d", seat.Row)),

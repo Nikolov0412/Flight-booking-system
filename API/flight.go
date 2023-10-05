@@ -7,10 +7,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/google/uuid"
 )
 
 type Flight struct {
-	ID                 string        `json:"id"`
 	FlightNumber       string        `json:"flightNumber"`
 	OriginAirport      string        `json:"originAirport"`
 	DestinationAirport string        `json:"destinationAirport"`
@@ -25,13 +25,13 @@ func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
 	if err := validateFlightData(flight); err != nil {
 		return err
 	}
-
+	flightID := uuid.New().String()
 	// Create a new flight item in DynamoDB.
 	putInput := &dynamodb.PutItemInput{
 		TableName: aws.String("Flights"),
 		Item: map[string]*dynamodb.AttributeValue{
 			"ID": {
-				S: aws.String(flight.ID),
+				S: aws.String(flightID),
 			},
 			"FlightNumber": {
 				S: aws.String(flight.FlightNumber),
@@ -62,7 +62,7 @@ func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
 		return err
 	}
 
-	fmt.Printf("Created Flight: ID=%s, FlightNumber=%s\n", flight.ID, flight.FlightNumber)
+	fmt.Printf("Created Flight: ID=%s, FlightNumber=%s\n", flightID, flight.FlightNumber)
 	return nil
 }
 
