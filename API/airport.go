@@ -81,30 +81,29 @@ func isAlphabetic(s string) bool {
 }
 
 func GetAirportByID(airportID string, svc *dynamodb.DynamoDB) (*Airport, error) {
-	// Create a DynamoDB GetItem input.
-	input := &dynamodb.GetItemInput{
+	input := &dynamodb.QueryInput{
 		TableName: aws.String("Airports"),
-		Key: map[string]*dynamodb.AttributeValue{
-			"ID": {
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":ID": {
 				S: aws.String(airportID),
 			},
 		},
+		KeyConditionExpression: aws.String("ID = :ID"),
 	}
 
-	// Get the item from DynamoDB.
-	result, err := svc.GetItem(input)
+	// Query the item from DynamoDB.
+	result, err := svc.Query(input)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if the item was found.
-	if result.Item == nil {
+	// Check if any items were found.
+	if len(result.Items) == 0 {
 		return nil, errors.New("Airport not found")
 	}
 
-	// Parse the retrieved data into an Airport struct.
 	airport := &Airport{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, airport)
+	err = dynamodbattribute.UnmarshalMap(result.Items[0], airport)
 	if err != nil {
 		return nil, err
 	}

@@ -77,30 +77,29 @@ func CreateAirline(airline Airline, svc *dynamodb.DynamoDB) error {
 }
 
 func GetAirlineByID(airlineID string, svc *dynamodb.DynamoDB) (*Airline, error) {
-	// Create a DynamoDB GetItem input.
-	input := &dynamodb.GetItemInput{
+	input := &dynamodb.QueryInput{
 		TableName: aws.String("Airlines"),
-		Key: map[string]*dynamodb.AttributeValue{
-			"ID": {
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":ID": {
 				S: aws.String(airlineID),
 			},
 		},
+		KeyConditionExpression: aws.String("ID = :ID"),
 	}
 
-	// Get the item from DynamoDB.
-	result, err := svc.GetItem(input)
+	// Query the item from DynamoDB.
+	result, err := svc.Query(input)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if the item was found.
-	if result.Item == nil {
+	// Check if any items were found.
+	if len(result.Items) == 0 {
 		return nil, errors.New("Airline not found")
 	}
 
-	// Parse the retrieved data into an Airline struct.
 	airline := &Airline{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, airline)
+	err = dynamodbattribute.UnmarshalMap(result.Items[0], airline)
 	if err != nil {
 		return nil, err
 	}

@@ -17,9 +17,14 @@ type Seat struct {
 	IsBooked bool   `json:"IsBooked"`
 }
 
-func CreatetSeat(seat Seat, svc *dynamodb.DynamoDB) error {
+func CreateSeat(seat Seat, svc *dynamodb.DynamoDB) error {
 	seatID := uuid.New().String()
 
+	if !doesTableExist("Seats", svc) {
+		if err := createSeatsTable(svc); err != nil {
+			fmt.Printf("Error creating Seats table: %v\n", err)
+		}
+	}
 	// Create a DynamoDB PutItem input.
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String("Seats"),
@@ -79,6 +84,28 @@ func GetSeatByID(seatID string, svc *dynamodb.DynamoDB) (*Seat, error) {
 
 	return seat, nil
 }
+func GetAllSeats(svc *dynamodb.DynamoDB) ([]Seat, error) {
+	input := &dynamodb.ScanInput{
+		TableName: aws.String("Seats"),
+	}
+
+	result, err := svc.Scan(input)
+	if err != nil {
+		return nil, err
+	}
+
+	seats := []Seat{}
+
+	for _, item := range result.Items {
+		seat := Seat{}
+		if err := dynamodbattribute.UnmarshalMap(item, &seat); err != nil {
+			return nil, err
+		}
+		seats = append(seats, seat)
+	}
+
+	return seats, nil
+}
 
 func UpdateSeatIsBooked(seatID string, isBooked bool, svc *dynamodb.DynamoDB) error {
 	// Create a DynamoDB UpdateItem input to update the IsBooked property.
@@ -124,4 +151,36 @@ func CreateSeatMatrix(numRows, numCols int) [][]Seat {
 	}
 
 	return seatMatrix
+}
+
+func createSeatsTable(svc *dynamodb.DynamoDB) error {
+	// Define the parameters for creating the "Seats" table.
+	params := &dynamodb.CreateTableInput{
+		TableName: aws.String("Seats"),
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("ID"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("ID"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+	}
+
+	// Create the "Seats" table.
+	_, err := svc.CreateTable(params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Seats table created successfully")
+	return nil
 }
