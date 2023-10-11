@@ -10,33 +10,21 @@ import (
 )
 
 type FlightSection struct {
-	ID        string   `json:"id"`
-	SeatClass string   `json:"seatClass"`
-	NumRows   int      `json:"numRows"`
-	NumCols   int      `json:"numCols"`
-	Seats     [][]Seat `json:"seats"`
+	ID        string `json:"id"`
+	SeatClass string `json:"seatClass"`
+	NumRows   int    `json:"numRows"`
+	NumCols   int    `json:"numCols"`
 }
 
 func CreateFlightSection(flightSection FlightSection, svc *dynamodb.DynamoDB) error {
 	// Generate a unique ID for the flight section.
 	flightSectionID := uuid.New().String()
 
-	// Flatten the Seats array into a single list of seats.
-	var seats []Seat
-	for _, row := range flightSection.Seats {
-		seats = append(seats, row...)
-	}
-
-	// Convert the seats to a list of DynamoDB attribute values.
-	seatAVList := make([]*dynamodb.AttributeValue, len(seats))
-	for i, seat := range seats {
-		seatAV, err := dynamodbattribute.MarshalMap(seat)
-		if err != nil {
-			return err
+	if !doesTableExist("FlightSections", svc) {
+		if err := createFlightSectionsTable(svc); err != nil {
+			fmt.Printf("Error creating FlightSections table: %v\n", err)
 		}
-		seatAVList[i] = &dynamodb.AttributeValue{M: seatAV}
 	}
-
 	// Create a DynamoDB PutItem input.
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String("FlightSections"),
@@ -52,9 +40,6 @@ func CreateFlightSection(flightSection FlightSection, svc *dynamodb.DynamoDB) er
 			},
 			"NumCols": {
 				N: aws.String(fmt.Sprintf("%d", flightSection.NumCols)),
-			},
-			"Seats": {
-				L: seatAVList, // Store the flattened seats as a list of maps.
 			},
 		},
 	}
@@ -89,18 +74,36 @@ func GetAllFlightSections(svc *dynamodb.DynamoDB) ([]FlightSection, error) {
 			return nil, err
 		}
 
-		// Unmarshal the Seats attribute (list of maps) into a slice of Seat.
-		for _, av := range item["Seats"].L {
-			var seat Seat
-			err := dynamodbattribute.UnmarshalMap(av.M, &seat)
-			if err != nil {
-				return nil, err
-			}
-			flightSection.Seats = append(flightSection.Seats, []Seat{seat}) // Append as a slice of slices
-		}
-
 		flightSections = append(flightSections, flightSection)
 	}
 
 	return flightSections, nil
+}
+func createFlightSectionsTable(svc *dynamodb.DynamoDB) error {
+	params := &dynamodb.CreateTableInput{
+		TableName: aws.String("FlightSections"),
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("ID"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("ID"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+	}
+	_, err := svc.CreateTable(params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("FlightSections table created successfully")
+	return nil
 }

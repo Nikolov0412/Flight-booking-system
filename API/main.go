@@ -126,7 +126,28 @@ func main() {
 
 		c.JSON(http.StatusOK, seats)
 	})
+	r.GET("/seats/flight/:flightNumber", func(c *gin.Context) {
+		flightNumber := c.Param("flightNumber")
 
+		seats, err := GetSeatsByFlightNumber(flightNumber, svc)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, seats)
+	})
+	r.GET("/seats/flightsection/:flightSectionID", func(c *gin.Context) {
+		flightSectionID := c.Param("flightSectionID")
+
+		seats, err := GetSeatsByFlightSectionID(flightSectionID, svc)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, seats)
+	})
 	r.GET("/seats/:id", func(c *gin.Context) {
 		seatID := c.Param("id")
 
@@ -159,6 +180,31 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Seat updated successfully"})
+	})
+
+	r.POST("/flightsections", func(c *gin.Context) {
+		var flightSection FlightSection
+
+		if err := c.ShouldBindJSON(&flightSection); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := CreateFlightSection(flightSection, svc); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Flight section created successfully"})
+	})
+	r.GET("/flightsections", func(c *gin.Context) {
+		flightSections, err := GetAllFlightSections(svc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, flightSections)
 	})
 
 	r.Run()

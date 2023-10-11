@@ -18,7 +18,6 @@ type Flight struct {
 	DepartureDate      time.Time     `json:"departureDate"`
 	FlightTime         time.Duration `json:"flightTime"`
 	ETA                string        `json:"eta"`
-	PlaneID            string        `json:"planeID"` // Reference to the Plane in the Planes table
 }
 
 func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
@@ -51,9 +50,6 @@ func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
 			},
 			"ETA": {
 				S: aws.String(flight.ETA),
-			},
-			"PlaneID": {
-				S: aws.String(flight.PlaneID),
 			},
 		},
 	}
@@ -92,7 +88,6 @@ func validateFlightData(flight Flight) error {
 		{flight.DepartureDate, "DepartureDate is required and must be a valid date"},
 		{flight.FlightTime, "FlightTime must be greater than 0"},
 		{flight.ETA, "ETA is required"},
-		{flight.PlaneID, "PlaneID is required"},
 	}
 
 	for _, rule := range validationRules {
