@@ -206,6 +206,64 @@ func main() {
 
 		c.JSON(http.StatusOK, flightSections)
 	})
+	r.GET("/flightsections/:id", func(c *gin.Context) {
+		// Retrieve the flight section ID from the URL parameters
+		sectionID := c.Param("id")
+
+		// Call the GetFlightSectionByID function to fetch the flight section
+		flightSection, err := GetFlightSectionByID(sectionID, svc)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, flightSection)
+	})
+
+	r.POST("/flights", func(c *gin.Context) {
+		var flight Flight
+
+		// Bind the request body to the Flight struct
+		if err := c.ShouldBindJSON(&flight); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Call the CreateFlight function to create the flight in DynamoDB
+		if err := CreateFlight(flight, svc); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"message": "Flight created successfully"})
+	})
+	r.GET("/flights", func(c *gin.Context) {
+		flights, err := GetAllFlights(svc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, flights)
+	})
+	r.GET("/flights/origin/:airport", func(c *gin.Context) {
+		originAirport := c.Param("airport")
+		flights, err := GetFlightsByOriginAirport(originAirport, svc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, flights)
+	})
+
+	r.GET("/flights/destination/:airport", func(c *gin.Context) {
+		destinationAirport := c.Param("airport")
+		flights, err := GetFlightsByDestinationAirport(destinationAirport, svc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, flights)
+	})
 
 	r.Run()
 

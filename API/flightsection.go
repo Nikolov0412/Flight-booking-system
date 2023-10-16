@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -79,6 +80,38 @@ func GetAllFlightSections(svc *dynamodb.DynamoDB) ([]FlightSection, error) {
 
 	return flightSections, nil
 }
+func GetFlightSectionByID(sectionID string, svc *dynamodb.DynamoDB) (*FlightSection, error) {
+	// Create a DynamoDB GetItem input.
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String("FlightSections"),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(sectionID),
+			},
+		},
+	}
+
+	// Get the item from DynamoDB.
+	result, err := svc.GetItem(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the item was found.
+	if result.Item == nil {
+		return nil, errors.New("Flight Section not found")
+	}
+
+	// Parse the retrieved data into a FlightSection struct.
+	flightSection := &FlightSection{}
+	err = dynamodbattribute.UnmarshalMap(result.Item, flightSection)
+	if err != nil {
+		return nil, err
+	}
+
+	return flightSection, nil
+}
+
 func createFlightSectionsTable(svc *dynamodb.DynamoDB) error {
 	params := &dynamodb.CreateTableInput{
 		TableName: aws.String("FlightSections"),
