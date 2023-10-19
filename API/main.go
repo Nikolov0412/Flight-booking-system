@@ -1,23 +1,28 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
 )
 
 var svc *dynamodb.DynamoDB
+var ginLambda *ginadapter.GinLambda
 
-func init() {
+func initDB() {
 	var err error
 	svc, err = initDynamoDB()
 	if err != nil {
 		panic(err)
 	}
 }
-func main() {
-
+func init() {
+	initDB()
 	r := gin.Default()
 	// Define a route for creating airlines
 	r.POST("/airlines", func(c *gin.Context) {
@@ -267,6 +272,13 @@ func main() {
 		c.JSON(http.StatusOK, flights)
 	})
 
-	r.Run()
+	ginLambda = ginadapter.New(r)
+}
+func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// If no name is provided in the HTTP request body, throw an error
+	return ginLambda.ProxyWithContext(ctx, req)
+}
 
+func main() {
+	lambda.Start(Handler)
 }
