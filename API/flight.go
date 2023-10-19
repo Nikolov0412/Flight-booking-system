@@ -32,6 +32,18 @@ func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
 			fmt.Printf("Error creating Flights table: %v\n", err)
 		}
 	}
+	// Check if OriginAirport and DestinationAirport exist.
+	if !doesAirportExist(flight.OriginAirport, svc) {
+		return errors.New("OriginAirport does not exist")
+	}
+	if !doesAirportExist(flight.DestinationAirport, svc) {
+		return errors.New("DestinationAirport does not exist")
+	}
+	// Check if FlightSectionIDs exist.
+	if !doFlightSectionsExist(flight.FlightSectionID, svc) {
+		return errors.New("One or more flightsection values do not exist")
+	}
+
 	flightID := uuid.New().String()
 	// Convert the list of FlightSectionID strings to a list of DynamoDB attribute values.
 	flightSectionIDs := make([]*string, len(flight.FlightSectionID))
@@ -69,7 +81,6 @@ func CreateFlight(flight Flight, svc *dynamodb.DynamoDB) error {
 			},
 		},
 	}
-
 	_, err := svc.PutItem(putInput)
 	if err != nil {
 		return err
@@ -108,10 +119,10 @@ func GetAllFlights(svc *dynamodb.DynamoDB) ([]Flight, error) {
 func GetFlightsByOriginAirport(originAirport string, svc *dynamodb.DynamoDB) ([]Flight, error) {
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String("Flights"),
-		IndexName:              aws.String("originAirport"), // Use the index name you defined
-		KeyConditionExpression: aws.String("OriginAirport = :originAirport"),
+		IndexName:              aws.String("originAiport"),
+		KeyConditionExpression: aws.String("OriginAirport = :OriginAirport"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":originAirport": {
+			":OriginAirport": {
 				S: aws.String(originAirport),
 			},
 		},
@@ -136,7 +147,7 @@ func GetFlightsByOriginAirport(originAirport string, svc *dynamodb.DynamoDB) ([]
 func GetFlightsByDestinationAirport(destinationAirport string, svc *dynamodb.DynamoDB) ([]Flight, error) {
 	input := &dynamodb.QueryInput{
 		TableName:              aws.String("Flights"),
-		IndexName:              aws.String("destinationAirport"), // Use the index name you defined
+		IndexName:              aws.String("destinationAirport"),
 		KeyConditionExpression: aws.String("DestinationAirport = :DestinationAirport"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":DestinationAirport": {
@@ -218,10 +229,26 @@ func createFlightsTable(svc *dynamodb.DynamoDB) error {
 				AttributeName: aws.String("ID"),
 				KeyType:       aws.String("HASH"),
 			},
+			{
+				AttributeName: aws.String("OriginAirport"),
+				KeyType:       aws.String("RANGE"),
+			},
 		},
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("ID"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("DestinationAirport"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("OriginAirport"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("FlightNumber"),
 				AttributeType: aws.String("S"),
 			},
 		},
@@ -258,6 +285,22 @@ func createFlightsTable(svc *dynamodb.DynamoDB) error {
 					WriteCapacityUnits: aws.Int64(5),
 				},
 			},
+			{
+				IndexName: aws.String("FlightNumberIndex"),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{
+						AttributeName: aws.String("FlightNumber"),
+						KeyType:       aws.String("HASH"),
+					},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String("ALL"),
+				},
+				ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+					ReadCapacityUnits:  aws.Int64(5),
+					WriteCapacityUnits: aws.Int64(5),
+				},
+			},
 		},
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
 			ReadCapacityUnits:  aws.Int64(5),
@@ -273,4 +316,60 @@ func createFlightsTable(svc *dynamodb.DynamoDB) error {
 
 	fmt.Println("Flights table created successfully")
 	return nil
+}
+func doesAirportExist(airportCode string, svc *dynamodb.DynamoDB) bool {
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String("Airports"),
+		IndexName:              aws.String("CodeIndex"),
+		KeyConditionExpression: aws.String("#code = :code"),
+		ExpressionAttributeNames: map[string]*string{
+			"#code": aws.String("Code"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":code": {
+				S: aws.String(airportCode),
+			},
+		},
+	}
+
+	// Perform the query.
+	result, err := svc.Query(queryInput)
+	if err != nil {
+		return false
+	}
+
+	// If the count is greater than 0, the airport code exists.
+	return *result.Count > 0
+}
+
+func doFlightSectionsExist(flightSectionIDs []string, svc *dynamodb.DynamoDB) bool {
+	invalidIDs := []string{}
+
+	for _, id := range flightSectionIDs {
+		input := &dynamodb.QueryInput{
+			TableName:              aws.String("FlightSections"),
+			KeyConditionExpression: aws.String("#id = :id"),
+			ExpressionAttributeNames: map[string]*string{
+				"#id": aws.String("ID"),
+			},
+			ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+				":id": {
+					S: aws.String(id),
+				},
+			},
+		}
+
+		result, err := svc.Query(input)
+		if err != nil || len(result.Items) == 0 {
+			invalidIDs = append(invalidIDs, id)
+		}
+	}
+
+	// If there are any invalid FlightSectionIDs, return false.
+	if len(invalidIDs) > 0 {
+		return false
+	}
+
+	// If the loop completes without finding any invalid IDs, return true.
+	return true
 }

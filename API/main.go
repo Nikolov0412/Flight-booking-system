@@ -197,6 +197,7 @@ func main() {
 
 		c.JSON(http.StatusCreated, gin.H{"message": "Flight section created successfully"})
 	})
+
 	r.GET("/flightsections", func(c *gin.Context) {
 		flightSections, err := GetAllFlightSections(svc)
 		if err != nil {
@@ -206,6 +207,7 @@ func main() {
 
 		c.JSON(http.StatusOK, flightSections)
 	})
+
 	r.GET("/flightsections/:id", func(c *gin.Context) {
 		// Retrieve the flight section ID from the URL parameters
 		sectionID := c.Param("id")

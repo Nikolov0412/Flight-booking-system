@@ -27,6 +27,14 @@ func CreateSeat(seat Seat, svc *dynamodb.DynamoDB) error {
 			fmt.Printf("Error creating Seats table: %v\n", err)
 		}
 	}
+
+	if err := validateFlightNumber(seat.FlightNumber, svc); err != nil {
+		return err
+	}
+	if err := validateFlightSectionID(seat.FlightSectionID, svc); err != nil {
+		return err
+	}
+
 	// Create a DynamoDB PutItem input.
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String("Seats"),
@@ -96,7 +104,7 @@ func GetSeatsByFlightNumber(FlightNumber string, svc *dynamodb.DynamoDB) ([]*Sea
 func GetSeatsByFlightSectionID(FlightSectionID string, svc *dynamodb.DynamoDB) ([]*Seat, error) {
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String("Seats"),
-		IndexName:              aws.String("FlightSectionIDIndex"), // Use the GSI name
+		IndexName:              aws.String("FlightSectionIndex"),
 		KeyConditionExpression: aws.String("#FlightSectionID = :FlightSectionID"),
 		ExpressionAttributeNames: map[string]*string{
 			"#FlightSectionID": aws.String("FlightSectionID"),
@@ -208,24 +216,6 @@ func UpdateSeatIsBooked(seatID string, isBooked bool, svc *dynamodb.DynamoDB) er
 	return nil
 }
 
-func CreateSeatMatrix(numRows, numCols int) [][]Seat {
-	seatMatrix := make([][]Seat, numRows)
-
-	for i := 0; i < numRows; i++ {
-		seatMatrix[i] = make([]Seat, numCols)
-		for j := 0; j < numCols; j++ {
-			// Initialize each seat in the matrix
-			seatMatrix[i][j] = Seat{
-				Row:      i + 1, // Rows and columns are usually 1-based
-				Col:      j + 1,
-				IsBooked: false,
-			}
-		}
-	}
-
-	return seatMatrix
-}
-
 func createSeatsTable(svc *dynamodb.DynamoDB) error {
 	// Define the parameters for creating the "Seats" table.
 	params := &dynamodb.CreateTableInput{
@@ -235,10 +225,22 @@ func createSeatsTable(svc *dynamodb.DynamoDB) error {
 				AttributeName: aws.String("ID"),
 				KeyType:       aws.String("HASH"),
 			},
+			{
+				AttributeName: aws.String("FlightSectionID"),
+				KeyType:       aws.String("RANGE"),
+			},
 		},
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("ID"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("FlightSectionID"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("FlightNumber"),
 				AttributeType: aws.String("S"),
 			},
 		},
@@ -289,5 +291,60 @@ func createSeatsTable(svc *dynamodb.DynamoDB) error {
 	}
 
 	fmt.Println("Seats table created successfully")
+	return nil
+}
+func validateFlightNumber(flightNumber string, svc *dynamodb.DynamoDB) error {
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String("Flights"),
+		IndexName:              aws.String("FlightNumberIndex"),
+		KeyConditionExpression: aws.String("#fn = :fn"),
+		ExpressionAttributeNames: map[string]*string{
+			"#fn": aws.String("FlightNumber"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":fn": {
+				S: aws.String(flightNumber),
+			},
+		},
+	}
+
+	// Perform the query.
+	result, err := svc.Query(queryInput)
+	if err != nil {
+		return err
+	}
+
+	// If the count is 0, FlightNumber does not exist.
+	if *result.Count == 0 {
+		return errors.New("FlightNumber does not exist")
+	}
+
+	return nil
+}
+
+func validateFlightSectionID(flightSectionID string, svc *dynamodb.DynamoDB) error {
+	// Query the FlightSections table to check if the FlightSectionID exists.
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String("FlightSections"),
+		KeyConditionExpression: aws.String("#id = :id"),
+		ExpressionAttributeNames: map[string]*string{
+			"#id": aws.String("ID"),
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":id": {
+				S: aws.String(flightSectionID),
+			},
+		},
+	}
+
+	queryResult, err := svc.Query(queryInput)
+	if err != nil {
+		return err
+	}
+
+	if *queryResult.Count == 0 {
+		return errors.New("FlightSectionID does not exist")
+	}
+
 	return nil
 }
