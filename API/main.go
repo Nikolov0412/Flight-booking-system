@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -12,17 +13,29 @@ import (
 )
 
 var svc *dynamodb.DynamoDB
-var ginLambda *ginadapter.GinLambda
+var ginLambda *ginadapter.GinLambdaV2
 
-func initDB() {
+type Response struct {
+	message string `json:"message"`
+}
+
+func main() {
 	var err error
 	svc, err = initDynamoDB()
+	log.Printf(svc.Endpoint)
+	log.Printf(svc.ServiceName)
 	if err != nil {
+		log.Printf(err.Error())
 		panic(err)
 	}
+	lambda.Start(Handler)
 }
+func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	return ginLambda.ProxyWithContext(ctx, req)
+}
+
 func init() {
-	initDB()
+	log.Printf("Gin cold start")
 	r := gin.Default()
 	// Define a route for creating airlines
 	r.POST("/airlines", func(c *gin.Context) {
@@ -30,23 +43,23 @@ func init() {
 
 		// Bind the request body to the Airline struct
 		if err := c.ShouldBindJSON(&airline); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		// Call the CreateAirline function to create the airline in DynamoDB
 		if err := CreateAirline(airline, svc); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "Airline created successfully"})
+		c.JSON(http.StatusCreated, Response{message: "Airline created successfully"})
 	})
 
 	r.GET("/airlines", func(c *gin.Context) {
 		airlines, err := GetAllAirlines(svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -57,7 +70,7 @@ func init() {
 
 		airline, err := GetAirlineByID(airlineID, svc)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 
@@ -68,22 +81,22 @@ func init() {
 		var airport Airport
 
 		if err := c.ShouldBindJSON(&airport); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		if err := CreateAirport(airport, svc); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "Airport created successfully"})
+		c.JSON(http.StatusCreated, Response{message: "Airport created successfully"})
 	})
 
 	r.GET("/airports", func(c *gin.Context) {
 		airports, err := GetAllAirports(svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -97,7 +110,7 @@ func init() {
 		// Call the GetAirportByID function to retrieve the airport by ID
 		airport, err := GetAirportByID(airportID, svc)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 
@@ -110,22 +123,22 @@ func init() {
 
 		// Bind the request body to the Seat struct
 		if err := c.ShouldBindJSON(&seat); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		// Call the CreateSeat function to create the seat in DynamoDB
 		if err := CreateSeat(seat, svc); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "Seat created successfully"})
+		c.JSON(http.StatusCreated, Response{message: "Seat created successfully"})
 	})
 	r.GET("/seats", func(c *gin.Context) {
 		seats, err := GetAllSeats(svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -136,7 +149,7 @@ func init() {
 
 		seats, err := GetSeatsByFlightNumber(flightNumber, svc)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 
@@ -147,7 +160,7 @@ func init() {
 
 		seats, err := GetSeatsByFlightSectionID(flightSectionID, svc)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 
@@ -158,7 +171,7 @@ func init() {
 
 		seat, err := GetSeatByID(seatID, svc)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 
@@ -174,39 +187,40 @@ func init() {
 
 		// Bind the request body to the updateData struct
 		if err := c.ShouldBindJSON(&updateData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		err := UpdateSeatIsBooked(seatID, updateData.IsBooked, svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Seat updated successfully"})
+		c.JSON(http.StatusOK, Response{message: "Seat updated successfully"})
 	})
 
 	r.POST("/flightsections", func(c *gin.Context) {
 		var flightSection FlightSection
 
 		if err := c.ShouldBindJSON(&flightSection); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		if err := CreateFlightSection(flightSection, svc); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
+
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "Flight section created successfully"})
+		c.JSON(http.StatusCreated, Response{message: "Flight section created successfully"})
 	})
 
 	r.GET("/flightsections", func(c *gin.Context) {
 		flightSections, err := GetAllFlightSections(svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -220,7 +234,7 @@ func init() {
 		// Call the GetFlightSectionByID function to fetch the flight section
 		flightSection, err := GetFlightSectionByID(sectionID, svc)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 
@@ -232,22 +246,22 @@ func init() {
 
 		// Bind the request body to the Flight struct
 		if err := c.ShouldBindJSON(&flight); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		// Call the CreateFlight function to create the flight in DynamoDB
 		if err := CreateFlight(flight, svc); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "Flight created successfully"})
+		c.JSON(http.StatusCreated, Response{message: "Flight created successfully"})
 	})
 	r.GET("/flights", func(c *gin.Context) {
 		flights, err := GetAllFlights(svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 		c.JSON(http.StatusOK, flights)
@@ -256,7 +270,7 @@ func init() {
 		originAirport := c.Param("airport")
 		flights, err := GetFlightsByOriginAirport(originAirport, svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 		c.JSON(http.StatusOK, flights)
@@ -266,19 +280,12 @@ func init() {
 		destinationAirport := c.Param("airport")
 		flights, err := GetFlightsByDestinationAirport(destinationAirport, svc)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 		c.JSON(http.StatusOK, flights)
 	})
 
-	ginLambda = ginadapter.New(r)
-}
-func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// If no name is provided in the HTTP request body, throw an error
-	return ginLambda.ProxyWithContext(ctx, req)
-}
+	ginLambda = ginadapter.NewV2(r)
 
-func main() {
-	lambda.Start(Handler)
 }

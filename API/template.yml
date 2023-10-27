@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Example Lambda Gin
+Resources:
+  SampleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      CodeUri: lambda-handler2.zip
+      Runtime: go1.x
+      MemorySize: 128
+      Policies: AWSLambdaBasicExecutionRole
+      Timeout: 50
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+      Events:
+        GetResource:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: any
+Outputs:
+  SampleGinApi:
+    Description: URL for application
+    Value: !Sub 'http://localhost:3000/'
+    Export:
+      Name: SampleGinApi
