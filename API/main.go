@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,8 +23,6 @@ type Response struct {
 func main() {
 	var err error
 	svc, err = initDynamoDB()
-	log.Printf(svc.Endpoint)
-	log.Printf(svc.ServiceName)
 	if err != nil {
 		log.Printf(err.Error())
 		panic(err)
@@ -37,6 +36,7 @@ func Handler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.AP
 func init() {
 	log.Printf("Gin cold start")
 	r := gin.Default()
+	r.Use(cors.Default())
 	// Define a route for creating airlines
 	r.POST("/airlines", func(c *gin.Context) {
 		var airline Airline

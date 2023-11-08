@@ -3,13 +3,21 @@ module flight-booking-system
 go 1.20
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
+	github.com/aws/aws-cdk-go/awscdk/v2 v2.102.0 // indirect
 	github.com/aws/aws-lambda-go v1.41.0 // indirect
 	github.com/aws/aws-sdk-go v1.45.15 // indirect
+	github.com/aws/constructs-go/constructs/v10 v10.2.70 // indirect
+	github.com/aws/jsii-runtime-go v1.89.0 // indirect
 	github.com/awslabs/aws-lambda-go-api-proxy v0.16.0 // indirect
 	github.com/bytedance/sonic v1.10.1 // indirect
+	github.com/cdklabs/awscdk-asset-awscli-go/awscliv1/v2 v2.2.200 // indirect
+	github.com/cdklabs/awscdk-asset-kubectl-go/kubectlv20/v2 v2.1.2 // indirect
+	github.com/cdklabs/awscdk-asset-node-proxy-agent-go/nodeproxyagentv6/v2 v2.0.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
