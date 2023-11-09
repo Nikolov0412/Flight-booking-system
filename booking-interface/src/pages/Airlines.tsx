@@ -6,6 +6,8 @@ import { Box, Button, Modal, TextField, Typography } from "@mui/material";
 import axios from "axios";
 import PublishIcon from "@mui/icons-material/Publish";
 
+/* Styles and grid definition */
+
 const modalStyle = {
   position: "absolute" as "absolute",
   top: "50%",
@@ -31,11 +33,15 @@ const columns: GridColDef[] = [
 ];
 
 const Airlines: React.FC = () => {
+  /* States */
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [open, setOpen] = React.useState(false);
   const [airlineCode, setAirlineCode] = useState("");
   const [errorMessage, setErrorMessage] = useState(""); // State for error message
+
+  /* Handlers and hooks */
 
   const handleOpen = () => {
     setOpen(true);
@@ -75,39 +81,38 @@ const Airlines: React.FC = () => {
     <div>
       <NavigationBar />
       <Box>
-        {" "}
         <Button onClick={handleOpen}>Create Airline</Button>
-        <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={modalStyle} component="form" onSubmit={handleSubmit}>
-            <Typography id="modal-modal-title" variant="h6" component="h2">
-              Airplane creation form
-            </Typography>
-            <Typography variant="body1">Airline Code:</Typography>
-            <TextField
-              required
-              id="outlined-required"
-              label="Required"
-              value={airlineCode}
-              onChange={(e) => setAirlineCode(e.target.value)}
-            />
-            <br />
-            {errorMessage && (
-              <Typography variant="body2" color="error">
-                {errorMessage}
-              </Typography>
-            )}
-            <br />
-            <Button variant="contained" type="submit" endIcon={<PublishIcon />}>
-              Submit
-            </Button>
-          </Box>
-        </Modal>
       </Box>
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={modalStyle} component="form" onSubmit={handleSubmit}>
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            Airline creation form
+          </Typography>
+          <Typography variant="body1">Airline Code:</Typography>
+          <TextField
+            required
+            id="outlined-required"
+            label="Required"
+            value={airlineCode}
+            onChange={(e) => setAirlineCode(e.target.value)}
+          />
+          <br />
+          {errorMessage && (
+            <Typography variant="body2" color="error">
+              {errorMessage}
+            </Typography>
+          )}
+          <br />
+          <Button variant="contained" type="submit" endIcon={<PublishIcon />}>
+            Submit
+          </Button>
+        </Box>
+      </Modal>
       <Box sx={{ height: 400, width: "100%" }}>
         <DataGrid
           rows={data}
