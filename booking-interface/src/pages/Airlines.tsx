@@ -69,7 +69,6 @@ const Airlines: React.FC = () => {
         setData(response.data);
         setLoading(false);
       } catch (error) {
-        console.error(error);
         setLoading(false);
       }
     };

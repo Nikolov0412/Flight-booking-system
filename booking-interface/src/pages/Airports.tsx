@@ -31,14 +31,14 @@ const columns: GridColDef[] = [
   },
 ];
 const Airports: React.FC = () => {
-    /* States */
+  /* States */
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [open, setOpen] = React.useState(false);
   const [airportCode, setAirportCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-/* Handlers and hooks */
+  /* Handlers and hooks */
 
   const handleOpen = () => {
     setOpen(true);
@@ -67,7 +67,6 @@ const Airports: React.FC = () => {
         setData(response.data);
         setLoading(false);
       } catch (error) {
-        console.error(error);
         setLoading(false);
       }
     };
