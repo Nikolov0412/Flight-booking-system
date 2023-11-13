@@ -101,6 +101,9 @@ const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
         ...prevData,
         flightTime: moment.duration(newTime?.format("hh:mm")) || moment.duration(1),
       }));        
+      const flightTimeFormated=millisecondsToNanoseconds(flightData.flightTime!.asMilliseconds())
+console.log(flightTimeFormated);
+
     };      
 
   const handleSelectChange = (event: SelectChangeEvent) => {
@@ -116,14 +119,14 @@ const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
       [e.target.name]: e.target.value,
     });
   };
-  function millisecondsToNanoseconds(milliseconds: any): number {
+  function millisecondsToNanoseconds(milliseconds: number): number {
     const nanosecondsPerMillisecond = 1e6; // 1 millisecond = 1,000,000 nanoseconds
     return milliseconds * nanosecondsPerMillisecond;
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        const flightTimeFormated=millisecondsToNanoseconds(flightData.flightTime!.asMilliseconds)
+        const flightTimeFormated=millisecondsToNanoseconds(flightData.flightTime!.asMilliseconds())
       await axios.post("http://127.0.0.1:3000/flights", {
         flightNumber:flightData.flightNumber,
         flightSectionID:flightData.flightSectionID,
@@ -234,7 +237,7 @@ const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
           <TimePicker
             label="Flight Time"
             value={flightData.flightTimeDate}
-            onChange={handleFlightTimeChange}
+            onChange={(newTime)=>{handleFlightTimeChange(newTime)}}
             views={['hours', 'minutes']} format="hh:mm" 
           />
               </LocalizationProvider>

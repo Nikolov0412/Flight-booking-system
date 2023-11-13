@@ -215,7 +215,7 @@ func CalculateETA(flight Flight) string {
 	arrivalTime := departureTime.Add(flight.FlightTime)
 
 	// Format the ETA as "15:28" (HH:mm).
-	etaString := arrivalTime.Format("15:28")
+	etaString := arrivalTime.Format("15:04")
 
 	return etaString
 }
