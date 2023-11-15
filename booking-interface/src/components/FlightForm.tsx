@@ -12,7 +12,11 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import axios from "axios";
-import {DateTimePicker,TimePicker,LocalizationProvider} from "@mui/x-date-pickers"
+import {
+  DateTimePicker,
+  TimePicker,
+  LocalizationProvider,
+} from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import moment, { Duration, Moment } from "moment";
 
@@ -22,32 +26,31 @@ interface FlightFormProps {
 }
 
 interface FlightData {
-    flightNumber: string;
-    flightSectionID: string[];
-    originAirport: string;
-    destinationAirport: string;
-    departureDate: Moment;
-    flightTimeDate:Moment;
-    flightTime: Duration| null;
-  }
-
-interface AirportData{
-    id:string,
-    code:string
+  flightNumber: string;
+  flightSectionID: string[];
+  originAirport: string;
+  destinationAirport: string;
+  departureDate: Moment;
+  flightTimeDate: Moment;
+  flightTime: Duration | null;
 }
 
-  const modalStyles={
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 400,
-    bgcolor: "background.paper",
-    border: "2px solid #000",
-    boxShadow: 24,
-    p: 4,
-  };
+interface AirportData {
+  id: string;
+  code: string;
+}
 
+const modalStyles = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 400,
+  bgcolor: "background.paper",
+  border: "2px solid #000",
+  boxShadow: 24,
+  p: 4,
+};
 
 const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
   const [flightData, setFlightData] = useState<FlightData>({
@@ -56,7 +59,7 @@ const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
     originAirport: "",
     destinationAirport: "",
     departureDate: moment(),
-    flightTimeDate:moment(),
+    flightTimeDate: moment(),
     flightTime: moment.duration(0),
   });
   const [airports, setAirports] = useState<AirportData[]>([]);
@@ -75,20 +78,20 @@ const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
       }
     };
     const fetchFlightSections = async () => {
-        try {
-          const response = await axios.get('http://127.0.0.1:3000/flightsections');
-          setFlightSections(response.data);
-        } catch (error) {
-          console.error('Error fetching flight sections:', error);
-        }
-      };
-    
+      try {
+        const response = await axios.get(
+          "http://127.0.0.1:3000/flightsections"
+        );
+        setFlightSections(response.data);
+      } catch (error) {
+        console.error("Error fetching flight sections:", error);
+      }
+    };
 
     fetchAirports();
     fetchFlightSections();
-
   }, []);
- 
+
   const handleDateChange = (date: moment.Moment | null) => {
     setFlightData((prevData) => ({
       ...prevData,
@@ -96,21 +99,23 @@ const FlightForm: React.FC<FlightFormProps> = ({ open, onClose }) => {
     }));
   };
 
-  const handleFlightTimeChange = (newTime: Moment|null ) => {
+  const handleFlightTimeChange = (newTime: Moment | null) => {
     setFlightData((prevData) => ({
-        ...prevData,
-        flightTime: moment.duration(newTime?.format("hh:mm")) || moment.duration(1),
-      }));        
-      const flightTimeFormated=millisecondsToNanoseconds(flightData.flightTime!.asMilliseconds())
-console.log(flightTimeFormated);
-
-    };      
+      ...prevData,
+      flightTime:
+        moment.duration(newTime?.format("hh:mm")) || moment.duration(1),
+    }));
+    const flightTimeFormated = millisecondsToNanoseconds(
+      flightData.flightTime!.asMilliseconds()
+    );
+    console.log(flightTimeFormated);
+  };
 
   const handleSelectChange = (event: SelectChangeEvent) => {
     setFlightData({
-        ...flightData,
-        [event.target.name]: event.target.value,
-      });
+      ...flightData,
+      [event.target.name]: event.target.value,
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,14 +131,17 @@ console.log(flightTimeFormated);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        const flightTimeFormated=millisecondsToNanoseconds(flightData.flightTime!.asMilliseconds())
+      const flightTimeFormated = millisecondsToNanoseconds(
+        flightData.flightTime!.asMilliseconds()
+      );
       await axios.post("http://127.0.0.1:3000/flights", {
-        flightNumber:flightData.flightNumber,
-        flightSectionID:flightData.flightSectionID,
-        originAirport:flightData.originAirport,
-        destinationAirport:flightData.destinationAirport,
-        departureDate:flightData.departureDate,
-        flightTime: flightTimeFormated});
+        flightNumber: flightData.flightNumber,
+        flightSectionID: flightData.flightSectionID,
+        originAirport: flightData.originAirport,
+        destinationAirport: flightData.destinationAirport,
+        departureDate: flightData.departureDate,
+        flightTime: flightTimeFormated,
+      });
       onClose(); // Close the modal if the request is successful
     } catch (error) {
       console.error("Error creating flight:", error);
@@ -142,7 +150,7 @@ console.log(flightTimeFormated);
   };
 
   return (
-    <Modal open={open} onClose={onClose}> 
+    <Modal open={open} onClose={onClose}>
       <Box sx={modalStyles}>
         <Typography variant="h6" gutterBottom>
           Create Flight
@@ -155,11 +163,11 @@ console.log(flightTimeFormated);
             onChange={handleInputChange}
             required
           />
-       <br />
+          <br />
           <br />
           <FormControl fullWidth>
             <InputLabel htmlFor="destinationAirport">Origin Airport</InputLabel>
-          <Select
+            <Select
               label="Origin Airport"
               name="originAirport"
               value={flightData.originAirport}
@@ -178,11 +186,13 @@ console.log(flightTimeFormated);
                 ))
               )}
             </Select>
-            </FormControl>
-            <br />
+          </FormControl>
+          <br />
           <br />
           <FormControl fullWidth>
-            <InputLabel htmlFor="destinationAirport">Destination Airport</InputLabel>
+            <InputLabel htmlFor="destinationAirport">
+              Destination Airport
+            </InputLabel>
             <Select
               label="Destination Airport"
               name="destinationAirport"
@@ -206,41 +216,53 @@ console.log(flightTimeFormated);
           <br />
           <br />
           <FormControl fullWidth>
-          <InputLabel htmlFor="destinationAirport">Flight Section ID's</InputLabel>
-          <Select
-            multiple
-            value={flightData.flightSectionID}
-            onChange={(e) => setFlightData((prevData) => ({ ...prevData, flightSectionID: e.target.value as string[] }))}
-          >
-            {/* Render options based on the fetched flight sections */}
-            {flightSections.map((flightSection) => (
-              <MenuItem key={flightSection.seatClass} value={flightSection.id}>
-                {flightSection.seatClass}
-              </MenuItem>
-            ))}
-          </Select>
+            <InputLabel htmlFor="destinationAirport">
+              Flight Section ID's
+            </InputLabel>
+            <Select
+              multiple
+              value={flightData.flightSectionID}
+              onChange={(e) =>
+                setFlightData((prevData) => ({
+                  ...prevData,
+                  flightSectionID: e.target.value as string[],
+                }))
+              }
+            >
+              {/* Render options based on the fetched flight sections */}
+              {flightSections.map((flightSection) => (
+                <MenuItem
+                  key={flightSection.seatClass}
+                  value={flightSection.id}
+                >
+                  {flightSection.seatClass}
+                </MenuItem>
+              ))}
+            </Select>
           </FormControl>
-          <br/>
-          <br/>
-          <LocalizationProvider dateAdapter={AdapterMoment}>
-
-          <DateTimePicker
-            label="Departure Date"
-            value={flightData.departureDate}
-            onChange={handleDateChange}
-          />
-          </LocalizationProvider>
-
-    <br />
+          <br />
           <br />
           <LocalizationProvider dateAdapter={AdapterMoment}>
-          <TimePicker
-            label="Flight Time"
-            value={flightData.flightTimeDate}
-            onChange={(newTime)=>{handleFlightTimeChange(newTime)}}
-            views={['hours', 'minutes']} format="hh:mm" 
-          />
-              </LocalizationProvider>
+            <DateTimePicker
+              label="Departure Date"
+              value={flightData.departureDate}
+              onChange={handleDateChange}
+            />
+          </LocalizationProvider>
+
+          <br />
+          <br />
+          <LocalizationProvider dateAdapter={AdapterMoment}>
+            <TimePicker
+              label="Flight Time"
+              value={flightData.flightTimeDate}
+              onChange={(newTime) => {
+                handleFlightTimeChange(newTime);
+              }}
+              views={["hours", "minutes"]}
+              format="hh:mm"
+            />
+          </LocalizationProvider>
 
           <br />
           <br />

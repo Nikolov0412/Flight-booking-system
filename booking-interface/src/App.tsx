@@ -8,16 +8,16 @@ import Seats from "./pages/Seats";
 function App() {
   return (
     <div className="App">
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/airlines" element={<Airlines />} />
-            <Route path="/airports" element={<Airports />} />
-            <Route path="/flightsections" element={<FlightSections />} />
-            <Route path="/flights" element={<Flights />} />
-            <Route path="/seats" element={<Seats />} />
-          </Routes>
-        </BrowserRouter>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/airlines" element={<Airlines />} />
+          <Route path="/airports" element={<Airports />} />
+          <Route path="/flightsections" element={<FlightSections />} />
+          <Route path="/flights" element={<Flights />} />
+          <Route path="/seats" element={<Seats />} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }
