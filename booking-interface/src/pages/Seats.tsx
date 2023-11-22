@@ -3,6 +3,8 @@ import NavigationBar from "../components/Navigation";
 import Footer from "../components/Footer";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import axios from "axios";
+import { Box, Button } from "@mui/material";
+import SeatForm from "../components/SeatForm";
 
 const columns: GridColDef[] = [
   {
@@ -26,7 +28,7 @@ const columns: GridColDef[] = [
     flex: 1,
   },
   {
-    field: "FlightSectionId",
+    field: "FlightSectionID",
     headerName: "Flight Section ID",
     flex: 1,
   },
@@ -39,6 +41,14 @@ const columns: GridColDef[] = [
 const Seats: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [open, setOpen] = React.useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const handleOpen = () => {
+    setOpen(true);
+    setErrorMessage("");
+  };
+
+  const handleClose = () => setOpen(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +66,10 @@ const Seats: React.FC = () => {
   return (
     <div>
       <NavigationBar />
+      <Box>
+        <Button onClick={handleOpen}>Create Seat</Button>
+      </Box>
+      <SeatForm open={open} onClose={handleClose} />
       <DataGrid
         sx={{ minHeight: "400px " }}
         rows={data}
