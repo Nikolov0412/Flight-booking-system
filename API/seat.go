@@ -34,6 +34,9 @@ func CreateSeat(seat Seat, svc *dynamodb.DynamoDB) error {
 	if err := validateFlightSectionID(seat.FlightSectionID, svc); err != nil {
 		return err
 	}
+	if err := validateRowColInFlightSection(seat, svc); err != nil {
+		return err
+	}
 
 	// Create a DynamoDB PutItem input.
 	input := &dynamodb.PutItemInput{
@@ -344,6 +347,21 @@ func validateFlightSectionID(flightSectionID string, svc *dynamodb.DynamoDB) err
 
 	if *queryResult.Count == 0 {
 		return errors.New("FlightSectionID does not exist")
+	}
+
+	return nil
+}
+
+func validateRowColInFlightSection(seat Seat, svc *dynamodb.DynamoDB) error {
+	// Retrieve the FlightSection details using FlightSectionID from the seat
+	flightSection, err := GetFlightSectionByID(seat.FlightSectionID, svc)
+	if err != nil {
+		return err
+	}
+
+	// Check if the provided Row and Col are within the valid range
+	if seat.Row < 1 || seat.Row > flightSection.NumRows || seat.Col < 1 || seat.Col > flightSection.NumCols {
+		return errors.New("Row or Col is out of range for the FlightSection")
 	}
 
 	return nil
