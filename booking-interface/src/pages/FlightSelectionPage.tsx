@@ -1,9 +1,15 @@
-// FlightSelectionPage.tsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import SeatMap from "../components/SeatMap"; // Import the SeatMap component
+import SeatMap from "../components/SeatMap";
 import NavigationBar from "../components/Navigation";
 import Footer from "../components/Footer";
+import {
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Container,
+} from "@mui/material";
 
 interface Flight {
   id: string;
@@ -42,16 +48,26 @@ const FlightSelectionPage: React.FC = () => {
   return (
     <div>
       <NavigationBar />
-      <h2>Select a Flight</h2>
-      <ul>
-        {flights.map((flight) => (
-          <li key={flight.id} onClick={() => handleFlightSelect(flight)}>
-            {flight.flightNumber}
-          </li>
-        ))}
-      </ul>
+      <Container>
+        <Typography variant="h4" align="center" mt={3} mb={3}>
+          Select a Flight
+        </Typography>
+        <List>
+          {flights.map((flight) => (
+            <ListItem
+              key={flight.id}
+              button
+              onClick={() => handleFlightSelect(flight)}
+            >
+              <ListItemText primary={flight.flightNumber} />
+            </ListItem>
+          ))}
+        </List>
 
-      {selectedFlight && <SeatMap flightNumber={selectedFlight.flightNumber} />}
+        {selectedFlight && (
+          <SeatMap flightNumber={selectedFlight.flightNumber} />
+        )}
+      </Container>
       <Footer />
     </div>
   );
