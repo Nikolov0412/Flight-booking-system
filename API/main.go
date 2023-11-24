@@ -182,7 +182,8 @@ func init() {
 		seatID := c.Param("id")
 
 		var updateData struct {
-			IsBooked bool `json:"IsBooked"`
+			IsBooked        bool   `json:"IsBooked"`
+			FlightSectionID string `json:FlightSectionId`
 		}
 
 		// Bind the request body to the updateData struct
@@ -191,7 +192,7 @@ func init() {
 			return
 		}
 
-		err := UpdateSeatIsBooked(seatID, updateData.IsBooked, svc)
+		err := UpdateSeatIsBooked(seatID, updateData.FlightSectionID, updateData.IsBooked, svc)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return

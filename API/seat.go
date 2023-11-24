@@ -191,13 +191,16 @@ func GetAllSeats(svc *dynamodb.DynamoDB) ([]Seat, error) {
 	return seats, nil
 }
 
-func UpdateSeatIsBooked(seatID string, isBooked bool, svc *dynamodb.DynamoDB) error {
+func UpdateSeatIsBooked(seatID, flightSectionID string, isBooked bool, svc *dynamodb.DynamoDB) error {
 	// Create a DynamoDB UpdateItem input to update the IsBooked property.
 	input := &dynamodb.UpdateItemInput{
 		TableName: aws.String("Seats"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"ID": {
 				S: aws.String(seatID),
+			},
+			"FlightSectionID": {
+				S: aws.String(flightSectionID),
 			},
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -210,10 +213,14 @@ func UpdateSeatIsBooked(seatID string, isBooked bool, svc *dynamodb.DynamoDB) er
 	}
 
 	// Update the IsBooked property of the seat in DynamoDB.
-	_, err := svc.UpdateItem(input)
+	result, err := svc.UpdateItem(input)
 	if err != nil {
+		fmt.Printf("Error updating seat %s IsBooked: %v\n", seatID, err)
 		return err
 	}
+
+	// Check the result for debugging purposes (optional).
+	fmt.Printf("UpdateItem result: %v\n", result)
 
 	fmt.Printf("Updated seat %s IsBooked to %v\n", seatID, isBooked)
 	return nil

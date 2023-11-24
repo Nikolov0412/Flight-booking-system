@@ -3,7 +3,7 @@ import NavigationBar from "../components/Navigation";
 import Footer from "../components/Footer";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import axios from "axios";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Link } from "@mui/material";
 import SeatForm from "../components/SeatForm";
 
 const columns: GridColDef[] = [
@@ -68,6 +68,7 @@ const Seats: React.FC = () => {
       <NavigationBar />
       <Box>
         <Button onClick={handleOpen}>Create Seat</Button>
+        <Button component={Link} href="/book">Book a seat</Button>
       </Box>
       <SeatForm open={open} onClose={handleClose} />
       <DataGrid
