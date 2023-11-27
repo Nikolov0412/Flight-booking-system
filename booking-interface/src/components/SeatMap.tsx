@@ -90,7 +90,6 @@ const SeatMap: React.FC<SeatMapProps> = ({ flightNumber }) => {
           flexDirection: "column",
         }}
       >
-        {/* Seat Grid */}
         <div style={{ display: "flex" }}>
           {/* Empty space for row labels */}
           <div style={{ width: "40px" }}></div>
@@ -149,7 +148,7 @@ const SeatMap: React.FC<SeatMapProps> = ({ flightNumber }) => {
                   }}
                   onClick={() => seat && handleSeatClick(seat.id)}
                 >
-                  {col}
+                  {seat?.Row}
                 </div>
               );
             })}
